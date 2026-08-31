@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Association {
+  id                  String               @id @default(cuid())
+  name                String
+  address             String?
+  city                String?
+  contactEmail        String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  users               User[]
+  members             Member[]
+  duesPayments        DuesPayment[]
+  duesYears           DuesYear[]
+  meetings            Meeting[]
+  maintenanceRequests MaintenanceRequest[]
+  documents           Document[]
+}
+
+model User {
+  id            String      @id @default(cuid())
+  name          String
+  email         String      @unique
+  passwordHash  String
+  role          String      @default("owner")
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  sessions      Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Member {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  name          String
+  address       String
+  email         String?
+  phone         String?
+  createdAt     DateTime    @default(now())
+  duesPayments  DuesPayment[]
+}
+
+model DuesPayment {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  memberId      String
+  year          Int
+  paidAt        DateTime    @default(now())
+  member        Member      @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, year])
+}
+
+model DuesYear {
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  year          Int
+  amount        Int
+
+  @@id([associationId, year])
+}
+
+model Meeting {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  title         String
+  date          DateTime
+  type          String      @default("board")
+  location      String?
+  status        String      @default("scheduled")
+  agenda        String      @default("")
+  minutes       String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model MaintenanceRequest {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  title         String
+  description   String      @default("")
+  category      String      @default("other")
+  priority      String      @default("medium")
+  reporter      String?
+  status        String      @default("new")
+  completedAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Document {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  name          String
+  storedName    String      @unique
+  url           String
+  mimeType      String      @default("application/octet-stream")
+  size          Int
+  createdAt     DateTime    @default(now())
+}

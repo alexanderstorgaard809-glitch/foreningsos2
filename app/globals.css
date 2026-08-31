@@ -1,0 +1,246 @@
+@import "tailwindcss";
+
+body {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  text-rendering: optimizeLegibility;
+}
+
+/* Cal Sans — Cal.com's signature heading typeface */
+.font-heading {
+  font-family: "Cal Sans", var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: #111827;
+  color: #ffffff;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ---------- Landing page animations ---------- */
+
+/* Scroll reveal — toggled by components/reveal.tsx */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Hero entrance */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.anim-fade-up {
+  animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Marquee strip */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.anim-marquee {
+  animation: marquee 32s linear infinite;
+}
+.marquee-fade {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 12%,
+    black 88%,
+    transparent
+  );
+}
+
+/* Mockup toasts that pop in and out on a loop */
+@keyframes toast-cycle {
+  0%,
+  14% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+  }
+  22%,
+  72% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  82%,
+  100% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+  }
+}
+.anim-toast {
+  animation: toast-cycle 7s ease-in-out infinite;
+}
+
+/* Mockup chart bars growing on load */
+@keyframes bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+.anim-bar {
+  transform-origin: bottom;
+  animation: bar-grow 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Mockup: due -> paid flip loop (progress width + stacked text swap) */
+@keyframes pay-progress {
+  0%,
+  40% {
+    width: 75%;
+  }
+  52%,
+  92% {
+    width: 81%;
+  }
+  100% {
+    width: 75%;
+  }
+}
+.anim-progress {
+  animation: pay-progress 8s ease-in-out infinite;
+}
+@keyframes swap-a {
+  0%,
+  40% {
+    opacity: 1;
+  }
+  50%,
+  90% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes swap-b {
+  0%,
+  40% {
+    opacity: 0;
+  }
+  50%,
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.anim-swap-a {
+  animation: swap-a 8s ease-in-out infinite;
+}
+.anim-swap-b {
+  animation: swap-b 8s ease-in-out infinite;
+}
+
+/* Soft pulse for the live dot */
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+.anim-pulse-dot {
+  animation: pulse-ring 2.4s ease-out infinite;
+}
+
+/* Showcase panel swap on tab click */
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.panel-in {
+  animation: panel-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Hero backdrop: dot grid fading out radially */
+.hero-grid {
+  background-image: radial-gradient(
+    circle,
+    rgb(212 212 212) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+  mask-image: radial-gradient(
+    ellipse 70% 65% at 50% 35%,
+    black 30%,
+    transparent 75%
+  );
+}
+
+/* CTA backdrop: faint dots on dark */
+.cta-grid {
+  background-image: radial-gradient(
+    circle,
+    rgb(255 255 255 / 0.14) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+  mask-image: radial-gradient(
+    ellipse 65% 80% at 50% 50%,
+    black 20%,
+    transparent 75%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .anim-fade-up,
+  .anim-marquee,
+  .anim-toast,
+  .anim-bar,
+  .anim-progress,
+  .anim-swap-a,
+  .anim-swap-b,
+  .anim-pulse-dot,
+  .panel-in {
+    animation: none;
+  }
+  .anim-progress {
+    width: 75% !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
