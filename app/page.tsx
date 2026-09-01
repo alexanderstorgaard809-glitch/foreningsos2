@@ -215,8 +215,20 @@ export default function Home() {
             </Button>
           </div>
           <p
-            className="anim-fade-up mt-4 text-xs text-neutral-400"
+            className="anim-fade-up mt-4 text-sm text-neutral-500"
             style={{ animationDelay: "340ms" }}
+          >
+            Or email me — I'll set your board up personally:{" "}
+            <a
+              href="mailto:alexanderstorgaard809@gmail.com"
+              className="font-medium text-neutral-900 underline decoration-neutral-300 underline-offset-2 transition-colors hover:decoration-neutral-900"
+            >
+              alexanderstorgaard809@gmail.com
+            </a>
+          </p>
+          <p
+            className="anim-fade-up mt-2 text-xs text-neutral-400"
+            style={{ animationDelay: "380ms" }}
           >
             Free for up to 20 homes · No credit card required
           </p>
@@ -472,7 +484,16 @@ export default function Home() {
               Read the FAQ
             </Button>
           </div>
-          <p className="mt-4 text-xs text-neutral-500">
+          <p className="mt-4 text-sm text-neutral-400">
+            Or email me — I'll set your board up personally:{" "}
+            <a
+              href="mailto:alexanderstorgaard809@gmail.com"
+              className="font-medium text-white underline decoration-neutral-600 underline-offset-2 transition-colors hover:decoration-white"
+            >
+              alexanderstorgaard809@gmail.com
+            </a>
+          </p>
+          <p className="mt-2 text-xs text-neutral-500">
             Free for up to 20 homes · Set up in minutes · Cancel anytime
           </p>
         </div>
