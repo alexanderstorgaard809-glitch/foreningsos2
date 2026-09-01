@@ -19,6 +19,7 @@ export default async function Dashboard() {
     inProgressCount,
     budgetItems,
     nextMeeting,
+    overdueCharges,
   ] = await Promise.all([
     prisma.member.count({ where: { associationId } }),
     prisma.duesPayment.count({ where: { year, associationId } }),
@@ -42,12 +43,24 @@ export default async function Dashboard() {
       },
       orderBy: { date: "asc" },
     }),
+    prisma.charge.findMany({
+      where: {
+        associationId,
+        paidAt: null,
+        assessedAt: { lt: new Date() },
+      },
+      include: { member: { select: { name: true } } },
+      orderBy: { assessedAt: "asc" },
+    }),
   ]);
 
   const amount = duesYear?.amount ?? 0;
   const percent =
     memberCount === 0 ? 0 : Math.round((paidCount / memberCount) * 100);
   const openRequests = newCount + inProgressCount;
+
+  const overdueTotal = overdueCharges.reduce((sum, c) => sum + c.amount, 0);
+  const overdueMembers = new Set(overdueCharges.map((c) => c.memberId)).size;
 
   const budgetIncome = budgetItems
     .filter((item) => item.kind === "income")
@@ -81,6 +94,44 @@ export default async function Dashboard() {
       <p className="mt-1 text-sm text-neutral-500">
         A quick look at your association.
       </p>
+
+      {overdueCharges.length > 0 && (
+        <div className="mt-5 rounded-lg border border-amber-300 bg-amber-50 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-medium text-amber-900">
+              {overdueCharges.length} overdue{" "}
+              {overdueCharges.length === 1 ? "charge" : "charges"} —{" "}
+              {formatUsd(overdueTotal)} unpaid across {overdueMembers}{" "}
+              {overdueMembers === 1 ? "member" : "members"}
+            </p>
+            <Link
+              href="/dashboard/dues"
+              className="text-xs font-medium text-amber-800 underline hover:text-amber-900"
+            >
+              Review →
+            </Link>
+          </div>
+          <ul className="mt-2 space-y-1">
+            {overdueCharges.slice(0, 3).map((c) => (
+              <li key={c.id} className="text-xs text-amber-900">
+                {c.member.name} — {formatUsd(c.amount)}, assessed{" "}
+                {c.assessedAt.toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  timeZone: "UTC",
+                })}
+                {c.description ? ` · ${c.description}` : ""}
+              </li>
+            ))}
+            {overdueCharges.length > 3 && (
+              <li className="text-xs text-amber-700">
+                and {overdueCharges.length - 3} more…
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-neutral-200 bg-white p-5">
