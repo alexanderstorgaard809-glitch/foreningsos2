@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -14,7 +15,7 @@ const iconProps = {
   strokeLinejoin: "round" as const,
 };
 
-export const navItems = [
+const navItems = [
   {
     label: "Overview",
     href: "/dashboard",
@@ -86,8 +87,6 @@ export const navItems = [
       <svg {...iconProps}>
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <polyline points="14 2 14 8 20 8" />
-        <line x1="16" y1="13" x2="8" y2="13" />
-        <line x1="16" y1="17" x2="8" y2="17" />
       </svg>
     ),
   },
@@ -105,58 +104,141 @@ export const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  // Close the drawer whenever the route changes
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll while the drawer is open
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  const nav = (
+    <nav className="flex flex-col gap-1">
+      {navItems.map((item) => {
+        const active = pathname === item.href;
+
+        return (
+          <Link
+            key={item.label}
+            href={item.href}
+            className={`flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors ${
+              active
+                ? "bg-white font-medium text-neutral-900 shadow-sm"
+                : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+            }`}
+          >
+            {item.icon}
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+
+  const brand = (
+    <Link
+      href="/dashboard"
+      className="flex items-center gap-2 px-2 text-sm font-semibold text-neutral-900"
+    >
+      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-neutral-900 text-[11px] font-bold text-white">
+        H
+      </span>
+      <span className="font-heading">HOAcove</span>
+    </Link>
+  );
 
   return (
-    <aside className="hidden w-56 shrink-0 flex-col border-r border-neutral-200 bg-neutral-50 p-4 md:flex">
-      <Link
-        href="/"
-        className="mb-6 flex items-center gap-2 px-2 text-sm font-semibold text-neutral-900"
-      >
-        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-neutral-900 text-[11px] font-bold text-white">
-          H
-        </span>
-        <span className="font-heading">HOAcove</span>
-      </Link>
-      <nav className="flex flex-col gap-1">
-        {navItems.map((item) => {
-          if (item.href === "#") {
-            return (
-              <span
-                key={item.label}
-                className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-neutral-400"
-              >
-                {item.icon}
-                {item.label}
-              </span>
-            );
-          }
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden w-56 shrink-0 flex-col border-r border-neutral-200 bg-neutral-50 p-4 md:flex">
+        <div className="mb-6">{brand}</div>
+        {nav}
+        <div className="mt-auto">
+          <Link
+            href="/"
+            className="rounded-md px-2 py-1.5 text-sm text-neutral-500 hover:text-neutral-900"
+          >
+            Back to website
+          </Link>
+        </div>
+      </aside>
 
-          const active = pathname === item.href;
-
-          return (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors ${
-                active
-                  ? "bg-white font-medium text-neutral-900 shadow-sm"
-                  : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
-              }`}
-            >
-              {item.icon}
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-      <div className="mt-auto">
-        <Link
-          href="/"
-          className="rounded-md px-2 py-1.5 text-sm text-neutral-500 hover:text-neutral-900"
+      {/* Mobile top bar with hamburger */}
+      <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b border-neutral-200 bg-white px-4 md:hidden">
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Open menu"
+          className="flex h-9 w-9 items-center justify-center rounded-md text-neutral-600 hover:bg-neutral-100"
         >
-          Back to website
-        </Link>
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          >
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+        {brand}
+        {/* Spacer so the brand stays centered */}
+        <span className="w-9" />
       </div>
-    </aside>
+      {/* Reserve the same height under the fixed mobile bar */}
+      <div className="h-14 md:hidden" />
+
+      {/* Drawer + backdrop */}
+      {open && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div
+            className="absolute inset-0 bg-neutral-900/40"
+            onClick={() => setOpen(false)}
+          />
+          <aside className="absolute inset-y-0 left-0 flex w-64 flex-col border-r border-neutral-200 bg-neutral-50 p-4 shadow-xl">
+            <div className="mb-6 flex items-center justify-between">
+              {brand}
+              <button
+                onClick={() => setOpen(false)}
+                aria-label="Close menu"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            {nav}
+            <div className="mt-auto">
+              <Link
+                href="/"
+                className="rounded-md px-2 py-1.5 text-sm text-neutral-500 hover:text-neutral-900"
+              >
+                Back to website
+              </Link>
+            </div>
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

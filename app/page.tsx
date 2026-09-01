@@ -215,7 +215,7 @@ export default function Home() {
             Early access — built for volunteer boards
           </span>
           <h1
-            className="anim-fade-up font-heading mx-auto mt-6 max-w-3xl text-5xl font-semibold tracking-tight sm:text-6xl"
+            className="anim-fade-up font-heading mx-auto mt-6 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl"
             style={{ animationDelay: "90ms" }}
           >
             Run your homeowners' association{" "}
@@ -235,7 +235,7 @@ export default function Home() {
             className="anim-fade-up mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
             style={{ animationDelay: "270ms" }}
           >
-            <Button href="/signup">Start free</Button>
+            <Button href="/signup" className="w-full sm:w-auto">Start free</Button>
             <Button variant="secondary" href="#how">
               See how it works
             </Button>
@@ -499,7 +499,7 @@ export default function Home() {
             spreadsheet again.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button variant="inverted" href="/signup">
+            <Button variant="inverted" href="/signup" className="w-full sm:w-auto">
               Start free
             </Button>
             <Button

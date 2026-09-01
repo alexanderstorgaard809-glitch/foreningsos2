@@ -177,7 +177,7 @@ export function DuesTable({
                   {m.paidAtLabel ?? "—"}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-3">
+                  <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-3">
                     {!m.paid && (
                       <button
                         onClick={() => copyReminder(m)}

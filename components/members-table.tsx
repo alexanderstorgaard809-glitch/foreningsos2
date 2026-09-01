@@ -214,7 +214,7 @@ export function MembersTable({ initialMembers }: { initialMembers: Member[] }) {
                       {member.phone ?? "—"}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-4">
+                      <div className="flex justify-end gap-2 sm:gap-4">
                         <Link
                           href={`/dashboard/members/${member.id}`}
                           className="text-sm font-medium text-neutral-500 hover:text-neutral-900"

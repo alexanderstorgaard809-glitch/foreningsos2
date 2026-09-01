@@ -70,7 +70,7 @@ export default function TemplatePage() {
           <span className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs text-neutral-600">
             Free download — no account needed
           </span>
-          <h1 className="font-heading mx-auto mt-5 max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
+          <h1 className="font-heading mx-auto mt-5 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
             The HOA dues tracking template
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-neutral-600">
