@@ -88,7 +88,7 @@ export function ImportMembers() {
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={
-          "Jane Jensen, Fællesvej 3, 8000 Aarhus C\nJohn Smith, Fællesvej 7\n..."
+          "Jane Jensen, 12 Maple Street\nJohn Smith, 12 Maple Street, john@example.com\n..."
         }
         rows={8}
         className="mt-4 w-full rounded-md border border-neutral-200 bg-white p-3 font-mono text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/10"

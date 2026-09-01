@@ -101,7 +101,7 @@ export function MembersTable({ initialMembers }: { initialMembers: Member[] }) {
             <label className={labelClass}>Address</label>
             <input
               required
-              placeholder="Fællesvej 3"
+              placeholder="12 Maple Street"
               value={form.address}
               onChange={(e) => set("address", e.target.value)}
               className={inputClass}
