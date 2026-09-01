@@ -68,7 +68,8 @@ export async function POST(request: Request) {
       addRandomSuffix: false,
     });
     url = blob.url;
-  } catch {
+  } catch (err) {
+    console.error("Blob upload failed:", err);
     return NextResponse.json(
       { error: "Upload failed — storage is not configured" },
       { status: 500 }
