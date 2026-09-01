@@ -50,3 +50,6 @@ uploads/
 
 # legacy local sqlite database
 prisma/*.db
+
+.vercel
+.env*
