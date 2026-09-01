@@ -124,6 +124,13 @@ model Document {
   createdAt     DateTime    @default(now())
 }
 
+model Lead {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String   @default("template")
+  createdAt DateTime @default(now())
+}
+
 model BudgetItem {
   id            String      @id @default(cuid())
   associationId String

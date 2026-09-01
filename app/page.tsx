@@ -484,6 +484,14 @@ export default function Home() {
               Read the FAQ
             </Button>
           </div>
+          <p className="mt-5 text-sm text-neutral-400">
+            Still on spreadsheets?{" "}
+            <a href="/template" className="underline hover:text-white">
+              Get the free dues template
+            </a>{" "}
+            — keep the spreadsheet, lose the chaos.
+          </p>
+
           <p className="mt-4 text-sm text-neutral-400">
             Or email me — I'll set your board up personally:{" "}
             <a
@@ -521,6 +529,7 @@ export default function Home() {
                 <li><a href="#how" className="transition-colors hover:text-neutral-900">How it works</a></li>
                 <li><a href="#pricing" className="transition-colors hover:text-neutral-900">Pricing</a></li>
                 <li><a href="#faq" className="transition-colors hover:text-neutral-900">FAQ</a></li>
+                <li><a href="/template" className="transition-colors hover:text-neutral-900">Free dues template</a></li>
               </ul>
             </div>
             <div>
