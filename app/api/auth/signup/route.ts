@@ -12,18 +12,16 @@ export async function POST(request: Request) {
     typeof body.associationName === "string"
       ? body.associationName.trim()
       : "";
+  const inviteCode =
+    typeof body.inviteCode === "string"
+      ? body.inviteCode.trim().toUpperCase()
+      : "";
   const email =
     typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body.password === "string" ? body.password : "";
 
   if (!name || name.length > 100) {
     return NextResponse.json({ error: "Your name is required" }, { status: 400 });
-  }
-  if (!associationName || associationName.length > 100) {
-    return NextResponse.json(
-      { error: "Association name is required" },
-      { status: 400 }
-    );
   }
   if (!emailPattern.test(email)) {
     return NextResponse.json(
@@ -51,23 +49,62 @@ export async function POST(request: Request) {
 
   const passwordHash = await hashPassword(password);
 
-  const result = await prisma.$transaction(async (tx) => {
-    const association = await tx.association.create({
-      data: { name: associationName },
+  let user: { id: string };
+
+  if (inviteCode) {
+    const association = await prisma.association.findUnique({
+      where: { inviteCode },
     });
-    const user = await tx.user.create({
+    if (!association) {
+      return NextResponse.json(
+        { error: "Invalid invite code" },
+        { status: 400 }
+      );
+    }
+    if (
+      !association.inviteExpiresAt ||
+      association.inviteExpiresAt < new Date()
+    ) {
+      return NextResponse.json(
+        { error: "This invite link has expired — ask the owner for a new one" },
+        { status: 400 }
+      );
+    }
+
+    user = await prisma.user.create({
       data: {
         name,
         email,
         passwordHash,
-        role: "owner",
+        role: "board",
         associationId: association.id,
       },
     });
-    return user;
-  });
+  } else {
+    if (!associationName || associationName.length > 100) {
+      return NextResponse.json(
+        { error: "Association name is required" },
+        { status: 400 }
+      );
+    }
 
-  const { token, expiresAt } = await createSession(result.id);
+    user = await prisma.$transaction(async (tx) => {
+      const association = await tx.association.create({
+        data: { name: associationName },
+      });
+      return tx.user.create({
+        data: {
+          name,
+          email,
+          passwordHash,
+          role: "owner",
+          associationId: association.id,
+        },
+      });
+    });
+  }
+
+  const { token, expiresAt } = await createSession(user.id);
 
   const res = NextResponse.json({ ok: true }, { status: 201 });
   res.cookies.set(SESSION_COOKIE, token, {

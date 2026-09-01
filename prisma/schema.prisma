@@ -16,6 +16,8 @@ model Association {
   contactEmail        String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
+  inviteCode          String?              @unique
+  inviteExpiresAt     DateTime?
   users               User[]
   members             Member[]
   duesPayments        DuesPayment[]
