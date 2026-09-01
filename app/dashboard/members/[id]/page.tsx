@@ -19,10 +19,14 @@ export default async function MemberLedgerPage({
   });
   if (!member) notFound();
 
-  const [payments, duesYears] = await Promise.all([
+  const [payments, duesYears, charges] = await Promise.all([
     prisma.duesPayment.findMany({ where: { memberId: member.id } }),
     prisma.duesYear.findMany({
       where: { associationId: auth.association.id },
+    }),
+    prisma.charge.findMany({
+      where: { associationId: auth.association.id, memberId: member.id },
+      orderBy: { assessedAt: "desc" },
     }),
   ]);
 
@@ -53,15 +57,43 @@ export default async function MemberLedgerPage({
       };
     });
 
-  const billed = rows.reduce((sum, r) => sum + (r.amount ?? 0), 0);
-  const collected = rows.reduce(
+  const duesBilled = rows.reduce((sum, r) => sum + (r.amount ?? 0), 0);
+  const duesCollected = rows.reduce(
     (sum, r) => sum + (r.amount !== null && r.paid ? r.amount : 0),
     0
   );
 
+  const chargesBilled = charges.reduce((sum, c) => sum + c.amount, 0);
+  const chargesCollected = charges.reduce(
+    (sum, c) => sum + (c.paidAt ? c.amount : 0),
+    0
+  );
+
+  const chargeRows = charges.map((c) => ({
+    id: c.id,
+    kind: c.kind,
+    description: c.description ?? "",
+    amount: c.amount,
+    assessedLabel: c.assessedAt.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    }),
+    paid: c.paidAt !== null,
+    paidAtLabel: c.paidAt
+      ? c.paidAt.toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : null,
+  }));
+
   return (
     <main className="mx-auto max-w-3xl p-6 lg:p-8">
       <MemberLedger
+        memberId={member.id}
         member={{
           name: member.name,
           address: member.address,
@@ -71,10 +103,15 @@ export default async function MemberLedgerPage({
         associationName={auth.association.name}
         contactEmail={auth.association.contactEmail ?? ""}
         rows={rows}
+        charges={chargeRows}
         totals={{
-          billed,
-          collected,
-          outstanding: billed - collected,
+          billed: duesBilled + chargesBilled,
+          collected: duesCollected + chargesCollected,
+          outstanding:
+            duesBilled +
+            chargesBilled -
+            duesCollected -
+            chargesCollected,
           hasUntrackedYears: rows.some((r) => r.amount === null),
         }}
       />

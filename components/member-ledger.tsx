@@ -13,7 +13,18 @@ export type LedgerRow = {
   paidAtLabel: string | null;
 };
 
+export type ChargeRow = {
+  id: string;
+  kind: string;
+  description: string;
+  amount: number;
+  assessedLabel: string;
+  paid: boolean;
+  paidAtLabel: string | null;
+};
+
 export type MemberLedgerProps = {
+  memberId: string;
   member: {
     name: string;
     address: string;
@@ -23,6 +34,7 @@ export type MemberLedgerProps = {
   associationName: string;
   contactEmail: string;
   rows: LedgerRow[];
+  charges: ChargeRow[];
   totals: {
     billed: number;
     collected: number;
@@ -31,14 +43,76 @@ export type MemberLedgerProps = {
   };
 };
 
+const kindLabels: Record<string, string> = {
+  late_fee: "Late fee",
+  special_assessment: "Special assessment",
+};
+
 export function MemberLedger({
+  memberId,
   member,
   associationName,
   contactEmail,
   rows,
+  charges,
   totals,
 }: MemberLedgerProps) {
   const [copied, setCopied] = useState(false);
+  const [showChargeForm, setShowChargeForm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [kind, setKind] = useState("late_fee");
+  const [description, setDescription] = useState("");
+  const [amount, setAmount] = useState("");
+  const [assessedAt, setAssessedAt] = useState(
+    new Date().toISOString().slice(0, 10)
+  );
+  const [error, setError] = useState("");
+
+  async function addCharge() {
+    setBusy(true);
+    setError("");
+    const res = await fetch("/api/charges", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        memberId,
+        kind,
+        description,
+        amount: Number(amount),
+        assessedAt,
+      }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setError(data?.error ?? "Something went wrong");
+      return;
+    }
+    setKind("late_fee");
+    setDescription("");
+    setAmount("");
+    setShowChargeForm(false);
+    window.location.reload();
+  }
+
+  async function togglePaid(id: string, paid: boolean) {
+    setBusy(true);
+    await fetch(`/api/charges/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paid: !paid }),
+    });
+    setBusy(false);
+    window.location.reload();
+  }
+
+  async function deleteCharge(id: string) {
+    if (!confirm("Delete this charge?")) return;
+    setBusy(true);
+    await fetch(`/api/charges/${id}`, { method: "DELETE" });
+    setBusy(false);
+    window.location.reload();
+  }
 
   async function copyStatement() {
     const lines = [
@@ -58,6 +132,15 @@ export function MemberLedger({
         return `${r.year}   ${amount}   ${status}`;
       }),
       "",
+      ...charges.map((c) => {
+        const label = kindLabels[c.kind] ?? c.kind;
+        const desc = c.description ? ` (${c.description})` : "";
+        const status = c.paid
+          ? `Paid${c.paidAtLabel ? ` on ${c.paidAtLabel}` : ""}`
+          : "Unpaid";
+        return `${label}${desc} — assessed ${c.assessedLabel}   ${formatUsd(c.amount)}   ${status}`;
+      }),
+      charges.length ? "" : null,
       `Total billed: ${formatUsd(totals.billed)}`,
       `Total collected: ${formatUsd(totals.collected)}`,
       `Outstanding balance: ${formatUsd(totals.outstanding)}`,
@@ -67,7 +150,7 @@ export function MemberLedger({
         month: "long",
         year: "numeric",
       })}`,
-    ];
+    ].filter((line): line is string => line !== null);
 
     if (contactEmail.trim()) {
       lines.push(`Questions? Contact: ${contactEmail.trim()}`);
@@ -164,6 +247,165 @@ export function MemberLedger({
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Charges — separate section, never merged into dues */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between">
+          <h2 className="font-heading text-lg font-semibold text-neutral-900">
+            Charges
+          </h2>
+          <Button
+            size="sm"
+            variant={showChargeForm ? "secondary" : "primary"}
+            onClick={() => setShowChargeForm((v) => !v)}
+          >
+            {showChargeForm ? "Cancel" : "Add charge"}
+          </Button>
+        </div>
+        <p className="mt-1 text-sm text-neutral-500">
+          Late fees and special assessments, recorded exactly as the board
+          decided them. Kept separate from dues.
+        </p>
+
+        {showChargeForm && (
+          <div className="mt-4 rounded-lg border border-neutral-200 bg-white p-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block">
+                <span className="text-xs font-medium text-neutral-500">
+                  Type
+                </span>
+                <select
+                  value={kind}
+                  onChange={(e) => setKind(e.target.value)}
+                  className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm"
+                >
+                  <option value="late_fee">Late fee</option>
+                  <option value="special_assessment">
+                    Special assessment
+                  </option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-xs font-medium text-neutral-500">
+                  Amount (USD)
+                </span>
+                <input
+                  type="number"
+                  min="1"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="e.g. 25"
+                  className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-medium text-neutral-500">
+                  Assessed on
+                </span>
+                <input
+                  type="date"
+                  value={assessedAt}
+                  onChange={(e) => setAssessedAt(e.target.value)}
+                  className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-medium text-neutral-500">
+                  Description (optional)
+                </span>
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="e.g. 10% late fee, board decision 12 Mar"
+                  maxLength={200}
+                  className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                />
+              </label>
+            </div>
+            {error && (
+              <p className="mt-2 text-sm text-red-600">{error}</p>
+            )}
+            <div className="mt-4">
+              <Button size="sm" onClick={addCharge} disabled={busy || !amount}>
+                {busy ? "Saving…" : "Record charge"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {charges.length ? (
+          <div className="mt-4 overflow-hidden rounded-lg border border-neutral-200 bg-white">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-neutral-200">
+                <tr className="text-xs font-medium text-neutral-500">
+                  <th className="px-4 py-3">Charge</th>
+                  <th className="px-4 py-3">Amount</th>
+                  <th className="px-4 py-3">Assessed</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {charges.map((c) => (
+                  <tr key={c.id} className="hover:bg-neutral-50">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-neutral-900">
+                        {kindLabels[c.kind] ?? c.kind}
+                      </p>
+                      {c.description && (
+                        <p className="mt-0.5 text-xs text-neutral-500">
+                          {c.description}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-neutral-600">
+                      {formatUsd(c.amount)}
+                    </td>
+                    <td className="px-4 py-3 text-neutral-500">
+                      {c.assessedLabel}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant={c.paid ? "success" : "warning"}>
+                        {c.paid ? "Paid" : "Unpaid"}
+                      </Badge>
+                      {c.paidAtLabel && (
+                        <p className="mt-0.5 text-xs text-neutral-500">
+                          {c.paidAtLabel}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          disabled={busy}
+                          onClick={() => togglePaid(c.id, c.paid)}
+                          className="text-xs text-neutral-500 hover:text-neutral-900"
+                        >
+                          {c.paid ? "Mark unpaid" : "Mark paid"}
+                        </button>
+                        <button
+                          disabled={busy}
+                          onClick={() => deleteCharge(c.id)}
+                          className="text-xs text-red-600 hover:text-red-800"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          !showChargeForm && (
+            <p className="mt-4 rounded-lg border border-dashed border-neutral-300 bg-white p-6 text-center text-sm text-neutral-500">
+              No charges for this member.
+            </p>
+          )
+        )}
       </div>
     </div>
   );

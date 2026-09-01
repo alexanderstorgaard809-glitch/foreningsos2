@@ -23,6 +23,7 @@ model Association {
   duesPayments        DuesPayment[]
   duesYears           DuesYear[]
   budgetItems         BudgetItem[]
+  charges             Charge[]
   meetings            Meeting[]
   maintenanceRequests MaintenanceRequest[]
   documents           Document[]
@@ -59,6 +60,7 @@ model Member {
   phone         String?
   createdAt     DateTime    @default(now())
   duesPayments  DuesPayment[]
+  charges       Charge[]
 }
 
 model DuesPayment {
@@ -144,4 +146,21 @@ model BudgetItem {
   updatedAt     DateTime    @updatedAt
 
   @@index([associationId, year])
+}
+
+model Charge {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  memberId      String
+  member        Member      @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  kind          String      @default("late_fee")
+  description   String?
+  amount        Int
+  assessedAt    DateTime
+  paidAt        DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([associationId, memberId])
 }
