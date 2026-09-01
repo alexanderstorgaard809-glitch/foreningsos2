@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getAuthContext } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
 import { formatUsd } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -11,25 +11,67 @@ export default async function Dashboard() {
   const auth = await getAuthContext();
   if (!auth) redirect("/login");
   const associationId = auth.association.id;
-  const [memberCount, paidCount, duesYear, newCount, inProgressCount] =
-    await Promise.all([
-      prisma.member.count({ where: { associationId } }),
-      prisma.duesPayment.count({ where: { year, associationId } }),
-      prisma.duesYear.findUnique({
-        where: { associationId_year: { associationId, year } },
-      }),
-      prisma.maintenanceRequest.count({
-        where: { status: "new", associationId },
-      }),
-      prisma.maintenanceRequest.count({
-        where: { status: "in_progress", associationId },
-      }),
-    ]);
+  const [
+    memberCount,
+    paidCount,
+    duesYear,
+    newCount,
+    inProgressCount,
+    budgetItems,
+    nextMeeting,
+  ] = await Promise.all([
+    prisma.member.count({ where: { associationId } }),
+    prisma.duesPayment.count({ where: { year, associationId } }),
+    prisma.duesYear.findUnique({
+      where: { associationId_year: { associationId, year } },
+    }),
+    prisma.maintenanceRequest.count({
+      where: { status: "new", associationId },
+    }),
+    prisma.maintenanceRequest.count({
+      where: { status: "in_progress", associationId },
+    }),
+    prisma.budgetItem.findMany({
+      where: { associationId, year },
+    }),
+    prisma.meeting.findFirst({
+      where: {
+        associationId,
+        status: "scheduled",
+        date: { gte: new Date() },
+      },
+      orderBy: { date: "asc" },
+    }),
+  ]);
 
   const amount = duesYear?.amount ?? 0;
   const percent =
     memberCount === 0 ? 0 : Math.round((paidCount / memberCount) * 100);
   const openRequests = newCount + inProgressCount;
+
+  const budgetIncome = budgetItems
+    .filter((item) => item.kind === "income")
+    .reduce((sum, item) => sum + item.amount, 0);
+  const budgetExpenses = budgetItems
+    .filter((item) => item.kind === "expense")
+    .reduce((sum, item) => sum + item.amount, 0);
+  const budgetNet = budgetIncome - budgetExpenses;
+  const hasBudget = budgetItems.length > 0;
+
+  const nextMeetingDateLabel = nextMeeting
+    ? nextMeeting.date.toLocaleDateString("en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "";
+  const nextMeetingTimeLabel = nextMeeting
+    ? nextMeeting.date.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "";
 
   return (
     <main className="mx-auto max-w-5xl p-6 lg:p-8">
@@ -81,33 +123,73 @@ export default async function Dashboard() {
         </div>
       </div>
 
-      <div className="mt-6 rounded-lg border border-dashed border-neutral-300 bg-white p-8 text-center">
-        <p className="text-sm font-medium text-neutral-900">
-          The full toolkit is live
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Members, dues, meetings, maintenance and documents — everything a
-          volunteer board needs, in one place.
-        </p>
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
-          <Button href="/dashboard/members" size="sm" variant="secondary">
-            Members
-          </Button>
-          <Button href="/dashboard/dues" size="sm" variant="secondary">
-            Dues
-          </Button>
-          <Button href="/dashboard/budget" size="sm" variant="secondary">
-            Budget
-          </Button>
-          <Button href="/dashboard/meetings" size="sm" variant="secondary">
-            Meetings
-          </Button>
-          <Button href="/dashboard/maintenance" size="sm" variant="secondary">
-            Maintenance
-          </Button>
-          <Button href="/dashboard/documents" size="sm">
-            Documents
-          </Button>
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border border-neutral-200 bg-white p-5">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-neutral-500">Budget {year}</p>
+            <Link
+              href="/dashboard/budget"
+              className="text-xs font-medium text-neutral-500 hover:text-neutral-900"
+            >
+              Open budget →
+            </Link>
+          </div>
+          {hasBudget ? (
+            <>
+              <p
+                className={`font-heading mt-1 text-3xl font-semibold ${
+                  budgetNet >= 0 ? "text-emerald-700" : "text-amber-700"
+                }`}
+              >
+                {formatUsd(budgetNet)}
+              </p>
+              <p className="mt-3 text-xs text-neutral-500">
+                Net of {formatUsd(budgetIncome)} planned income and{" "}
+                {formatUsd(budgetExpenses)} planned expenses
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-heading mt-1 text-3xl font-semibold text-neutral-300">
+                —
+              </p>
+              <p className="mt-3 text-xs text-neutral-500">
+                No budget lines yet — plan the year&apos;s income and expenses.
+              </p>
+            </>
+          )}
+        </div>
+
+        <div className="rounded-lg border border-neutral-200 bg-white p-5">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-neutral-500">Next meeting</p>
+            <Link
+              href="/dashboard/meetings"
+              className="text-xs font-medium text-neutral-500 hover:text-neutral-900"
+            >
+              All meetings →
+            </Link>
+          </div>
+          {nextMeeting ? (
+            <>
+              <p className="font-heading mt-1 truncate text-lg font-semibold text-neutral-900">
+                {nextMeeting.title}
+              </p>
+              <p className="mt-1.5 text-xs text-neutral-500">
+                {nextMeetingDateLabel} · {nextMeetingTimeLabel}
+                {nextMeeting.location ? ` · ${nextMeeting.location}` : ""}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-heading mt-1 text-3xl font-semibold text-neutral-300">
+                —
+              </p>
+              <p className="mt-3 text-xs text-neutral-500">
+                Nothing scheduled — set up the next board meeting.
+              </p>
+            </>
+          )}
         </div>
       </div>
     </main>
