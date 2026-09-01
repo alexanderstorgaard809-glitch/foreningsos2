@@ -80,7 +80,7 @@ export function GET() {
     ["WHEN THE SPREADSHEET BECOMES THE CHORE"],
     ["HOAcove does all of this automatically — per-unit ledgers, reminders, budgets,"],
     ["documents and more, stored with the association instead of one person."],
-    ["Free for small boards: `https://hoacove.vercel.app`"],
+    ["Free for small boards: https://hoacove.com"],
   ]);
 
   howto["!cols"] = [{ wch: 100 }];

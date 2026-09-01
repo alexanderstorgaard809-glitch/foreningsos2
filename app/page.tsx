@@ -127,6 +127,32 @@ const faqs = [
   },
 ];
 
+const productJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "HOAcove",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  description:
+    "Dues tracking, per-unit ledgers, budget planning, meeting notices and document archive for self-managed homeowners associations.",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+    description: "Free for small boards",
+  },
+};
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  })),
+};
+
 function CheckIcon() {
   return (
     <svg
@@ -553,6 +579,15 @@ export default function Home() {
           </p>
         </div>
       </footer>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
     </main>
   );
 }

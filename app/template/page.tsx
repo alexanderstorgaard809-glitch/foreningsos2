@@ -3,7 +3,7 @@ import Link from "next/link";
 import { TemplateForm } from "@/components/template-form";
 
 export const metadata: Metadata = {
-  title: "Free HOA Dues Tracking Template — HOAcove",
+  title: "Free HOA Dues Tracking Template",
   description:
     "A free spreadsheet template for tracking HOA dues per unit: live totals, example rows and treasurer how-tos. Works in Excel and Google Sheets.",
 };
