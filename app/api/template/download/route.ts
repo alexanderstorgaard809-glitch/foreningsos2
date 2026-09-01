@@ -5,7 +5,10 @@ const DATA_END = 106;
 
 export function GET() {
   const wb = XLSX.utils.book_new();
-  wb.Workbook = { Views: [{ fullCalcOnLoad: true }] };
+  // fullCalcOnLoad is supported at runtime but missing from the npm types
+  wb.Workbook = {
+    Views: [{ fullCalcOnLoad: true } as unknown as XLSX.WBView],
+  };
 
   const year = new Date().getFullYear();
 
