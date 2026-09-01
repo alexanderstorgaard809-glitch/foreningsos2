@@ -128,6 +128,9 @@ export default function SignupPage() {
             Log in
           </Link>
         </p>
+        <p className="mt-2 text-center text-sm text-neutral-500">
+          Invited by your board? Use the invite link they sent you.
+        </p>
       </div>
     </div>
   );
