@@ -29,6 +29,9 @@ export const metadata: Metadata = {
       "Dues, ledgers, budgets, meetings and documents in one place. Built for self-managed HOAs. Free for small boards.",
   },
   robots: { index: true, follow: true },
+  verification: {
+    google: "yaJuYUzuFJ4BF0AC6TFETiYWvRNzvLhsFP9_bRre9M8",
+  },
 };
 
 export default function RootLayout({
