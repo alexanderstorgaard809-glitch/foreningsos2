@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const options = [
-  { label: "Up to 20 homes", price: 0 },
+  { label: "Up to 25 homes", price: 0 },
   { label: "Up to 50 homes", price: 9 },
   { label: "Up to 100 homes", price: 15 },
   { label: "Up to 200 homes", price: 25 },
@@ -102,7 +102,7 @@ export function PricingCard() {
   return (
     <div className="relative mx-auto max-w-md">
       <span className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-emerald-500 px-3 py-0.5 text-xs font-medium text-white">
-        Free up to 20 homes
+        Free up to 25 homes
       </span>
 
       <div className="rounded-2xl bg-neutral-950 p-8 text-white shadow-xl shadow-neutral-900/20">
@@ -110,7 +110,7 @@ export function PricingCard() {
           Start free — pay only as you grow
         </p>
         <p className="mt-1 text-sm text-neutral-400">
-          Every feature on every plan. Up to 20 homes stays free, forever.
+          Every feature on every plan. Up to 25 homes stays free, forever.
         </p>
 
         {/* Animated price — Free tier shows text instead of $0 */}

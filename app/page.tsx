@@ -111,7 +111,7 @@ const faqs = [
   },
   {
     q: "How much does HOAcove cost?",
-    a: "Nothing for associations with up to 20 homes — every feature is included on the free plan. Larger associations pay a simple monthly price based on size, starting at $9 per month.",
+    a: "Nothing for associations with up to 25 homes — every feature is included on the free plan. Larger associations pay a simple monthly price based on size, starting at $9 per month.",
   },
   {
     q: "How does dues tracking work?",
@@ -256,7 +256,7 @@ export default function Home() {
             className="anim-fade-up mt-2 text-xs text-neutral-400"
             style={{ animationDelay: "380ms" }}
           >
-            Free for up to 20 homes · No credit card required
+            Free for up to 25 homes · No credit card required
           </p>
 
           {/* Animated product showcase */}
@@ -428,11 +428,11 @@ export default function Home() {
         <div className="mx-auto max-w-5xl px-6">
           <Reveal className="text-center">
             <h2 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-              Free up to 20 homes.
+              Free up to 25 homes.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-neutral-600">
               Every feature is included on every plan. Associations with up
-              to 20 homes pay nothing — pricing only starts when your
+              to 25 homes pay nothing — pricing only starts when your
               association grows.
             </p>
           </Reveal>
@@ -528,7 +528,7 @@ export default function Home() {
             </a>
           </p>
           <p className="mt-2 text-xs text-neutral-500">
-            Free for up to 20 homes · Set up in minutes · Cancel anytime
+            Free for up to 25 homes · Set up in minutes · Cancel anytime
           </p>
         </div>
       </section>
