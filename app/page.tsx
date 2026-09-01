@@ -110,6 +110,10 @@ const faqs = [
     a: "No. HOAcove runs in the browser on any laptop, tablet or phone. Nothing to install, nothing to update.",
   },
   {
+    q: "How much does HOAcove cost?",
+    a: "Nothing for associations with up to 20 homes — every feature is included on the free plan. Larger associations pay a simple monthly price based on size, starting at $9 per month.",
+  },
+  {
     q: "How does dues tracking work?",
     a: "You set an annual amount per member. When payments arrive, the treasurer marks them paid with one click. HOAcove shows who has paid, who has not, and exactly how much money has been collected.",
   },
@@ -214,7 +218,7 @@ export default function Home() {
             className="anim-fade-up mt-4 text-xs text-neutral-400"
             style={{ animationDelay: "340ms" }}
           >
-            Free during early access · No credit card required
+            Free for up to 20 homes · No credit card required
           </p>
 
           {/* Animated product showcase */}
@@ -386,11 +390,12 @@ export default function Home() {
         <div className="mx-auto max-w-5xl px-6">
           <Reveal className="text-center">
             <h2 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-              Every feature. One price.
+              Free up to 20 homes.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-neutral-600">
-              All plans include everything — the only difference is how many
-              homes your association has. Pick a size, see the price.
+              Every feature is included on every plan. Associations with up
+              to 20 homes pay nothing — pricing only starts when your
+              association grows.
             </p>
           </Reveal>
           <div className="mt-14">
@@ -468,7 +473,7 @@ export default function Home() {
             </Button>
           </div>
           <p className="mt-4 text-xs text-neutral-500">
-            Free during early access · Set up in minutes · Cancel anytime
+            Free for up to 20 homes · Set up in minutes · Cancel anytime
           </p>
         </div>
       </section>

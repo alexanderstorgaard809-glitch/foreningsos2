@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const options = [
-  { label: "Up to 25 homes", price: 9 },
-  { label: "Up to 50 homes", price: 15 },
-  { label: "Up to 100 homes", price: 25 },
-  { label: "Up to 200 homes", price: 39 },
-  { label: "200+ homes", price: 79 },
+  { label: "Up to 20 homes", price: 0 },
+  { label: "Up to 50 homes", price: 9 },
+  { label: "Up to 100 homes", price: 15 },
+  { label: "Up to 200 homes", price: 25 },
+  { label: "Up to 400 homes", price: 39 },
+  { label: "400+ homes", price: 79 },
 ];
 
 const features = [
@@ -74,7 +75,7 @@ function CheckIcon() {
 }
 
 export function PricingCard() {
-  const [selected, setSelected] = useState(1);
+  const [selected, setSelected] = useState(0);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const price = useAnimatedNumber(options[selected].price);
@@ -101,23 +102,25 @@ export function PricingCard() {
   return (
     <div className="relative mx-auto max-w-md">
       <span className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-emerald-500 px-3 py-0.5 text-xs font-medium text-white">
-        Every feature included
+        Free up to 20 homes
       </span>
 
       <div className="rounded-2xl bg-neutral-950 p-8 text-white shadow-xl shadow-neutral-900/20">
         <p className="font-heading text-lg font-semibold">
-          One plan for your association
+          Start free — pay only as you grow
         </p>
         <p className="mt-1 text-sm text-neutral-400">
-          All features for every board — you only pick the size.
+          Every feature on every plan. Up to 20 homes stays free, forever.
         </p>
 
-        {/* Animated price */}
+        {/* Animated price — Free tier shows text instead of $0 */}
         <div className="mt-6 flex items-end justify-center gap-1.5">
           <span className="font-heading text-6xl font-semibold tracking-tight">
-            ${price}
+            {options[selected].price === 0 ? "Free" : `$${price}`}
           </span>
-          <span className="pb-2 text-sm text-neutral-400">/month</span>
+          <span className="pb-2 text-sm text-neutral-400">
+            {options[selected].price === 0 ? "forever" : "/month"}
+          </span>
         </div>
 
         {/* Homes dropdown */}
@@ -172,7 +175,7 @@ export function PricingCard() {
                       {o.label}
                     </span>
                     <span className="font-medium text-neutral-900">
-                      ${o.price}
+                      {o.price === 0 ? "Free" : `$${o.price}`}
                     </span>
                   </button>
                 </li>
@@ -200,7 +203,7 @@ export function PricingCard() {
           </Button>
         </div>
         <p className="mt-3 text-center text-xs text-neutral-500">
-          Free during early access · Cancel anytime
+          No credit card required · Cancel anytime
         </p>
       </div>
     </div>
