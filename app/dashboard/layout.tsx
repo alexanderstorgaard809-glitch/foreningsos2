@@ -19,10 +19,10 @@ export default async function DashboardLayout({
   if (!auth) redirect("/login");
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 md:flex">
       <Sidebar />
 
-      <div className="flex min-h-screen flex-col md:pl-56">
+      <div className="min-w-0 flex-1">
         {/* Desktop topbar */}
         <div className="hidden md:block">
           <Topbar
@@ -38,7 +38,7 @@ export default async function DashboardLayout({
           </p>
         </div>
 
-        <div className="flex-1">{children}</div>
+        {children}
       </div>
     </div>
   );
