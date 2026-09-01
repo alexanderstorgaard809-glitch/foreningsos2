@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SearchInput } from "@/components/ui/search-input";
 import { formatUsd } from "@/lib/format";
 
 export type DuesRow = {
@@ -33,6 +34,15 @@ export function DuesTable({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedList, setCopiedList] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const filteredMembers = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return members;
+    return members.filter((m) =>
+      [m.name, m.address].some((field) => field.toLowerCase().includes(q))
+    );
+  }, [members, query]);
 
   const unpaid = members.filter((m) => !m.paid);
 
@@ -113,6 +123,16 @@ export function DuesTable({
         </div>
       )}
 
+      {members.length > 0 && (
+        <div className="mb-3">
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            placeholder="Search members"
+          />
+        </div>
+      )}
+
       <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-neutral-200">
@@ -125,7 +145,17 @@ export function DuesTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
-            {members.map((m) => (
+            {filteredMembers.length === 0 && (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-4 py-6 text-center text-sm text-neutral-500"
+                >
+                  No members match &ldquo;{query.trim()}&rdquo;
+                </td>
+              </tr>
+            )}
+            {filteredMembers.map((m) => (
               <tr key={m.id} className="hover:bg-neutral-50">
                 <td className="px-4 py-3 font-medium text-neutral-900">
                   <Link

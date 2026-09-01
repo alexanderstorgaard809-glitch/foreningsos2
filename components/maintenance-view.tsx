@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyScreen } from "@/components/ui/empty-screen";
+import { SearchInput } from "@/components/ui/search-input";
 
 export type MaintenanceRow = {
   id: string;
@@ -76,6 +77,7 @@ export function MaintenanceView({
   const [saving, setSaving] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
   const [form, setForm] = useState({
     title: "",
     category: "plumbing",
@@ -91,10 +93,16 @@ export function MaintenanceView({
     done: initialRequests.filter((r) => r.status === "done").length,
   };
 
-  const visible =
-    filter === "all"
-      ? initialRequests
-      : initialRequests.filter((r) => r.status === filter);
+  const q = query.trim().toLowerCase();
+
+  const visible = initialRequests
+    .filter((r) => filter === "all" || r.status === filter)
+    .filter(
+      (r) =>
+        !q ||
+        r.title.toLowerCase().includes(q) ||
+        r.reporter.toLowerCase().includes(q)
+    );
 
   // Open requests before done ones, then urgent first. Within equal
   // groups the original order (newest first) is preserved.
@@ -257,35 +265,44 @@ export function MaintenanceView({
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap gap-1 rounded-lg border border-neutral-200 bg-white p-1">
-            {tabs.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setFilter(t.key)}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
-                  filter === t.key
-                    ? "bg-neutral-900 font-medium text-white"
-                    : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
-                }`}
-              >
-                {t.label}
-                <span
-                  className={`rounded-full px-1.5 text-xs ${
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-1 rounded-lg border border-neutral-200 bg-white p-1">
+              {tabs.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setFilter(t.key)}
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
                     filter === t.key
-                      ? "bg-white/20 text-white"
-                      : "bg-neutral-100 text-neutral-500"
+                      ? "bg-neutral-900 font-medium text-white"
+                      : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
                   }`}
                 >
-                  {counts[t.key]}
-                </span>
-              </button>
-            ))}
+                  {t.label}
+                  <span
+                    className={`rounded-full px-1.5 text-xs ${
+                      filter === t.key
+                        ? "bg-white/20 text-white"
+                        : "bg-neutral-100 text-neutral-500"
+                    }`}
+                  >
+                    {counts[t.key]}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <SearchInput
+              value={query}
+              onChange={setQuery}
+              placeholder="Search title or reporter"
+            />
           </div>
 
           <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
             {sorted.length === 0 ? (
               <p className="px-4 py-6 text-center text-sm text-neutral-500">
-                Nothing here.
+                {q
+                  ? `No requests match “${q}”`
+                  : "Nothing here."}
               </p>
             ) : (
               sorted.map((r) => (

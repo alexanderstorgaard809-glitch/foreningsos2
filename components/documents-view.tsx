@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { EmptyScreen } from "@/components/ui/empty-screen";
+import { SearchInput } from "@/components/ui/search-input";
 
 export type DocumentRow = {
   id: string;
@@ -58,10 +59,20 @@ export function DocumentsView({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [query, setQuery] = useState("");
+
   const [message, setMessage] = useState<{
     ok: boolean;
     text: string;
   } | null>(null);
+
+  const filteredDocuments = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return initialDocuments;
+    return initialDocuments.filter((d) =>
+      d.name.toLowerCase().includes(q)
+    );
+  }, [initialDocuments, query]);
 
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
@@ -171,12 +182,26 @@ export function DocumentsView({
           />
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-          <p className="border-b border-neutral-200 px-4 py-3 text-sm font-medium text-neutral-500">
-            {initialDocuments.length} file
-            {initialDocuments.length === 1 ? "" : "s"}
-          </p>
-          {initialDocuments.map((d) => (
+        <div className="space-y-3">
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            placeholder="Search files"
+          />
+          <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+            <p className="border-b border-neutral-200 px-4 py-3 text-sm font-medium text-neutral-500">
+              {query.trim()
+                ? `${filteredDocuments.length} of ${initialDocuments.length} files`
+                : `${initialDocuments.length} file${
+                    initialDocuments.length === 1 ? "" : "s"
+                  }`}
+            </p>
+            {filteredDocuments.length === 0 ? (
+              <p className="px-4 py-6 text-center text-sm text-neutral-500">
+                No files match &ldquo;{query.trim()}&rdquo;
+              </p>
+            ) : (
+              filteredDocuments.map((d) => (
             <div
               key={d.id}
               className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 last:border-b-0 hover:bg-neutral-50"
@@ -205,7 +230,9 @@ export function DocumentsView({
                 Delete
               </button>
             </div>
-          ))}
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>

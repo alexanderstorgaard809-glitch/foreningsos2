@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { EmptyScreen } from "@/components/ui/empty-screen";
+import { SearchInput } from "@/components/ui/search-input";
 
 export type Member = {
   id: string;
@@ -26,6 +27,17 @@ export function MembersTable({ initialMembers }: { initialMembers: Member[] }) {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const filteredMembers = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return initialMembers;
+    return initialMembers.filter((m) =>
+      [m.name, m.address, m.email ?? "", m.phone ?? ""].some((field) =>
+        field.toLowerCase().includes(q)
+      )
+    );
+  }, [initialMembers, query]);
 
   function set(key: keyof typeof emptyForm, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -146,15 +158,30 @@ export function MembersTable({ initialMembers }: { initialMembers: Member[] }) {
       </form>
 
       <div>
-        <p className="mb-2 text-sm font-medium text-neutral-500">
-          {initialMembers.length} members
-        </p>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm font-medium text-neutral-500">
+            {query.trim()
+              ? `${filteredMembers.length} of ${initialMembers.length} members`
+              : `${initialMembers.length} members`}
+          </p>
+          {initialMembers.length > 0 && (
+            <SearchInput
+              value={query}
+              onChange={setQuery}
+              placeholder="Search name, address, email or phone"
+            />
+          )}
+        </div>
         <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
           {initialMembers.length === 0 ? (
             <EmptyScreen
               title="No members yet"
               description="Add your first member above. The member list is the foundation for dues, meetings and everything else."
             />
+          ) : filteredMembers.length === 0 ? (
+            <p className="px-4 py-6 text-center text-sm text-neutral-500">
+              No members match &ldquo;{query.trim()}&rdquo;
+            </p>
           ) : (
             <table className="w-full text-left text-sm">
               <thead className="border-b border-neutral-200">
@@ -167,7 +194,7 @@ export function MembersTable({ initialMembers }: { initialMembers: Member[] }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {initialMembers.map((member) => (
+                {filteredMembers.map((member) => (
                   <tr key={member.id} className="hover:bg-neutral-50">
                     <td className="px-4 py-3 font-medium text-neutral-900">
                       <Link
