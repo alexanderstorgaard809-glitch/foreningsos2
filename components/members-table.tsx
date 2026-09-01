@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -169,7 +170,12 @@ export function MembersTable({ initialMembers }: { initialMembers: Member[] }) {
                 {initialMembers.map((member) => (
                   <tr key={member.id} className="hover:bg-neutral-50">
                     <td className="px-4 py-3 font-medium text-neutral-900">
-                      {member.name}
+                      <Link
+                        href={`/dashboard/members/${member.id}`}
+                        className="hover:underline"
+                      >
+                        {member.name}
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-neutral-600">
                       {member.address}
@@ -182,6 +188,12 @@ export function MembersTable({ initialMembers }: { initialMembers: Member[] }) {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-4">
+                        <Link
+                          href={`/dashboard/members/${member.id}`}
+                          className="text-sm font-medium text-neutral-500 hover:text-neutral-900"
+                        >
+                          Ledger
+                        </Link>
                         <button
                           onClick={() => startEdit(member)}
                           className="text-sm font-medium text-neutral-500 hover:text-neutral-900"

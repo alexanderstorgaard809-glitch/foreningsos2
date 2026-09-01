@@ -66,6 +66,7 @@ export default async function DuesPage({
         id: m.id,
         name: m.name,
         address: m.address,
+        email: m.email,
         paid: paidAt !== null,
         paidAtLabel: paidAt
           ? paidAt.toLocaleDateString("en-GB", {
@@ -101,7 +102,13 @@ export default async function DuesPage({
         amount={duesYear?.amount ?? 0}
       />
 
-      <DuesTable year={year} members={rows} />
+      <DuesTable
+        year={year}
+        members={rows}
+        amount={duesYear?.amount ?? 0}
+        associationName={auth.association.name}
+        contactEmail={auth.association.contactEmail ?? ""}
+      />
     </main>
   );
 }
