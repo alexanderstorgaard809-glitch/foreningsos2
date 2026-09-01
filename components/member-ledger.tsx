@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatUsd } from "@/lib/format";
@@ -48,6 +49,11 @@ const kindLabels: Record<string, string> = {
   special_assessment: "Special assessment",
 };
 
+const inputClass =
+  "h-9 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/10";
+
+const labelClass = "mb-1.5 block text-sm font-medium text-neutral-900";
+
 export function MemberLedger({
   memberId,
   member,
@@ -57,64 +63,50 @@ export function MemberLedger({
   charges,
   totals,
 }: MemberLedgerProps) {
+  const router = useRouter();
   const [copied, setCopied] = useState(false);
-  const [showChargeForm, setShowChargeForm] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [kind, setKind] = useState("late_fee");
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
-  const [assessedAt, setAssessedAt] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
-  const [error, setError] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState(() => ({
+    kind: "late_fee",
+    description: "",
+    amount: "",
+    assessedAt: new Date().toISOString().slice(0, 10),
+  }));
 
-  async function addCharge() {
-    setBusy(true);
-    setError("");
-    const res = await fetch("/api/charges", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        memberId,
-        kind,
-        description,
-        amount: Number(amount),
-        assessedAt,
-      }),
+  function resetForm() {
+    setForm({
+      kind: "late_fee",
+      description: "",
+      amount: "",
+      assessedAt: new Date().toISOString().slice(0, 10),
     });
-    setBusy(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      setError(data?.error ?? "Something went wrong");
-      return;
-    }
-    setKind("late_fee");
-    setDescription("");
-    setAmount("");
-    setShowChargeForm(false);
-    window.location.reload();
-  }
-
-  async function togglePaid(id: string, paid: boolean) {
-    setBusy(true);
-    await fetch(`/api/charges/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ paid: !paid }),
-    });
-    setBusy(false);
-    window.location.reload();
-  }
-
-  async function deleteCharge(id: string) {
-    if (!confirm("Delete this charge?")) return;
-    setBusy(true);
-    await fetch(`/api/charges/${id}`, { method: "DELETE" });
-    setBusy(false);
-    window.location.reload();
+    setFormOpen(false);
+    setError(null);
   }
 
   async function copyStatement() {
+    const duesLines = rows.map((r) => {
+      const amount = r.amount !== null ? formatUsd(r.amount) : "—";
+      const status = r.paid
+        ? `Paid${r.paidAtLabel ? ` on ${r.paidAtLabel}` : ""}`
+        : "Due";
+      return `${r.year}   ${amount}   ${status}`;
+    });
+
+    const chargeLines = charges.map((c) => {
+      const label = kindLabels[c.kind] ?? "Charge";
+      const desc = c.description ? ` (${c.description})` : "";
+      const status = c.paid
+        ? `Paid${c.paidAtLabel ? ` on ${c.paidAtLabel}` : ""}`
+        : "Due";
+      return `${label}${desc} — assessed ${c.assessedLabel}   ${formatUsd(
+        c.amount
+      )}   ${status}`;
+    });
+
     const lines = [
       associationName,
       "",
@@ -124,23 +116,16 @@ export function MemberLedger({
       `Address: ${member.address || "—"}`,
       `Email: ${member.email || "—"}`,
       "",
-      ...rows.map((r) => {
-        const amount = r.amount !== null ? formatUsd(r.amount) : "—";
-        const status = r.paid
-          ? `Paid${r.paidAtLabel ? ` on ${r.paidAtLabel}` : ""}`
-          : "Due";
-        return `${r.year}   ${amount}   ${status}`;
-      }),
+      "DUES",
+      ...duesLines,
+    ];
+
+    if (charges.length > 0) {
+      lines.push("", "LATE FEES & ASSESSMENTS", ...chargeLines);
+    }
+
+    lines.push(
       "",
-      ...charges.map((c) => {
-        const label = kindLabels[c.kind] ?? c.kind;
-        const desc = c.description ? ` (${c.description})` : "";
-        const status = c.paid
-          ? `Paid${c.paidAtLabel ? ` on ${c.paidAtLabel}` : ""}`
-          : "Unpaid";
-        return `${label}${desc} — assessed ${c.assessedLabel}   ${formatUsd(c.amount)}   ${status}`;
-      }),
-      charges.length ? "" : null,
       `Total billed: ${formatUsd(totals.billed)}`,
       `Total collected: ${formatUsd(totals.collected)}`,
       `Outstanding balance: ${formatUsd(totals.outstanding)}`,
@@ -149,8 +134,8 @@ export function MemberLedger({
         day: "numeric",
         month: "long",
         year: "numeric",
-      })}`,
-    ].filter((line): line is string => line !== null);
+      })}`
+    );
 
     if (contactEmail.trim()) {
       lines.push(`Questions? Contact: ${contactEmail.trim()}`);
@@ -159,6 +144,76 @@ export function MemberLedger({
     await navigator.clipboard.writeText(lines.join("\n"));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handleAddCharge(e: React.FormEvent) {
+    e.preventDefault();
+    const amount = Number(form.amount);
+    if (!Number.isInteger(amount) || amount < 1 || amount > 10000000) {
+      setError("Amount must be a whole number between 1 and 10,000,000");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/charges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberId,
+          kind: form.kind,
+          description: form.description,
+          amount,
+          assessedAt: form.assessedAt,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Something went wrong");
+        return;
+      }
+      resetForm();
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function togglePaid(charge: ChargeRow) {
+    setPendingId(charge.id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/charges/${charge.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paid: !charge.paid }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Something went wrong");
+        return;
+      }
+      router.refresh();
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Delete this charge?")) return;
+    setPendingId(id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/charges/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Something went wrong");
+        return;
+      }
+      router.refresh();
+    } finally {
+      setPendingId(null);
+    }
   }
 
   return (
@@ -211,19 +266,22 @@ export function MemberLedger({
 
       {totals.hasUntrackedYears && (
         <p className="mt-3 text-xs text-neutral-500">
-          Years without an annual amount set are excluded from the totals. Set
-          the amount on the Dues page to include them.
+          Dues years without an annual amount set are excluded from the
+          totals. Set the amount on the Dues page to include them.
         </p>
       )}
 
       <div className="mt-6 overflow-hidden rounded-lg border border-neutral-200 bg-white">
+        <p className="border-b border-neutral-200 px-4 py-3 text-sm font-medium text-neutral-500">
+          Dues
+        </p>
         <table className="w-full text-left text-sm">
           <thead className="border-b border-neutral-200">
             <tr className="text-xs font-medium text-neutral-500">
               <th className="px-4 py-3">Year</th>
               <th className="px-4 py-3">Annual amount</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Paid on</th>
+              <th className="hidden px-4 py-3 sm:table-cell">Paid on</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
@@ -240,7 +298,7 @@ export function MemberLedger({
                     {r.paid ? "Paid" : "Due"}
                   </Badge>
                 </td>
-                <td className="px-4 py-3 text-neutral-500">
+                <td className="hidden px-4 py-3 text-neutral-500 sm:table-cell">
                   {r.paidAtLabel ?? "—"}
                 </td>
               </tr>
@@ -249,162 +307,161 @@ export function MemberLedger({
         </table>
       </div>
 
-      {/* Charges — separate section, never merged into dues */}
-      <div className="mt-8">
-        <div className="flex items-center justify-between">
-          <h2 className="font-heading text-lg font-semibold text-neutral-900">
-            Charges
-          </h2>
-          <Button
-            size="sm"
-            variant={showChargeForm ? "secondary" : "primary"}
-            onClick={() => setShowChargeForm((v) => !v)}
-          >
-            {showChargeForm ? "Cancel" : "Add charge"}
-          </Button>
+      <div className="mt-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-medium text-neutral-500">
+            Late fees &amp; special assessments
+            {charges.length > 0 ? ` — ${charges.length}` : ""}
+          </p>
+          {!formOpen && (
+            <Button size="sm" variant="secondary" onClick={() => setFormOpen(true)}>
+              Add charge
+            </Button>
+          )}
         </div>
-        <p className="mt-1 text-sm text-neutral-500">
-          Late fees and special assessments, recorded exactly as the board
-          decided them. Kept separate from dues.
-        </p>
 
-        {showChargeForm && (
-          <div className="mt-4 rounded-lg border border-neutral-200 bg-white p-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block">
-                <span className="text-xs font-medium text-neutral-500">
-                  Type
-                </span>
+        {formOpen && (
+          <form
+            onSubmit={handleAddCharge}
+            className="mt-3 rounded-lg border border-neutral-200 bg-white p-4"
+          >
+            <div className="grid gap-3 sm:grid-cols-4">
+              <div>
+                <label className={labelClass}>Type</label>
                 <select
-                  value={kind}
-                  onChange={(e) => setKind(e.target.value)}
-                  className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm"
+                  value={form.kind}
+                  onChange={(e) => setForm({ ...form, kind: e.target.value })}
+                  className={inputClass}
                 >
                   <option value="late_fee">Late fee</option>
                   <option value="special_assessment">
                     Special assessment
                   </option>
                 </select>
-              </label>
-              <label className="block">
-                <span className="text-xs font-medium text-neutral-500">
-                  Amount (USD)
-                </span>
+              </div>
+              <div>
+                <label className={labelClass}>Amount</label>
                 <input
+                  required
                   type="number"
-                  min="1"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="e.g. 25"
-                  className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                  min={1}
+                  step={1}
+                  placeholder="120"
+                  value={form.amount}
+                  onChange={(e) =>
+                    setForm({ ...form, amount: e.target.value })
+                  }
+                  className={inputClass}
                 />
-              </label>
-              <label className="block">
-                <span className="text-xs font-medium text-neutral-500">
-                  Assessed on
-                </span>
+              </div>
+              <div>
+                <label className={labelClass}>Assessed on</label>
                 <input
+                  required
                   type="date"
-                  value={assessedAt}
-                  onChange={(e) => setAssessedAt(e.target.value)}
-                  className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                  value={form.assessedAt}
+                  onChange={(e) =>
+                    setForm({ ...form, assessedAt: e.target.value })
+                  }
+                  className={inputClass}
                 />
-              </label>
-              <label className="block">
-                <span className="text-xs font-medium text-neutral-500">
-                  Description (optional)
-                </span>
+              </div>
+              <div>
+                <label className={labelClass}>
+                  Description{" "}
+                  <span className="font-normal text-neutral-400">
+                    (optional)
+                  </span>
+                </label>
                 <input
-                  type="text"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="e.g. 10% late fee, board decision 12 Mar"
-                  maxLength={200}
-                  className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                  placeholder="e.g. Roof fund"
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
+                  className={inputClass}
                 />
-              </label>
+              </div>
             </div>
-            {error && (
-              <p className="mt-2 text-sm text-red-600">{error}</p>
-            )}
-            <div className="mt-4">
-              <Button size="sm" onClick={addCharge} disabled={busy || !amount}>
-                {busy ? "Saving…" : "Record charge"}
+            <div className="mt-3 flex items-center gap-2">
+              <Button type="submit" size="sm" disabled={saving}>
+                {saving ? "Adding..." : "Add charge"}
               </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={resetForm}
+              >
+                Cancel
+              </Button>
+              {error && (
+                <span className="text-sm text-red-600">{error}</span>
+              )}
             </div>
-          </div>
+          </form>
         )}
 
-        {charges.length ? (
-          <div className="mt-4 overflow-hidden rounded-lg border border-neutral-200 bg-white">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-neutral-200">
-                <tr className="text-xs font-medium text-neutral-500">
-                  <th className="px-4 py-3">Charge</th>
-                  <th className="px-4 py-3">Amount</th>
-                  <th className="px-4 py-3">Assessed</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                {charges.map((c) => (
-                  <tr key={c.id} className="hover:bg-neutral-50">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-neutral-900">
-                        {kindLabels[c.kind] ?? c.kind}
-                      </p>
-                      {c.description && (
-                        <p className="mt-0.5 text-xs text-neutral-500">
-                          {c.description}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-neutral-600">
-                      {formatUsd(c.amount)}
-                    </td>
-                    <td className="px-4 py-3 text-neutral-500">
-                      {c.assessedLabel}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={c.paid ? "success" : "warning"}>
-                        {c.paid ? "Paid" : "Unpaid"}
-                      </Badge>
-                      {c.paidAtLabel && (
-                        <p className="mt-0.5 text-xs text-neutral-500">
-                          {c.paidAtLabel}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          disabled={busy}
-                          onClick={() => togglePaid(c.id, c.paid)}
-                          className="text-xs text-neutral-500 hover:text-neutral-900"
-                        >
-                          {c.paid ? "Mark unpaid" : "Mark paid"}
-                        </button>
-                        <button
-                          disabled={busy}
-                          onClick={() => deleteCharge(c.id)}
-                          className="text-xs text-red-600 hover:text-red-800"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          !showChargeForm && (
-            <p className="mt-4 rounded-lg border border-dashed border-neutral-300 bg-white p-6 text-center text-sm text-neutral-500">
-              No charges for this member.
+        <div className="mt-3 overflow-hidden rounded-lg border border-neutral-200 bg-white">
+          {charges.length === 0 ? (
+            <p className="px-4 py-6 text-center text-sm text-neutral-500">
+              No charges. Add a late fee or special assessment when you issue
+              one — it appears as its own line on the ledger, with the date it
+              was assessed.
             </p>
-          )
+          ) : (
+            <ul className="divide-y divide-neutral-100">
+              {charges.map((c) => (
+                <li
+                  key={c.id}
+                  className="flex flex-wrap items-center gap-3 px-4 py-3 hover:bg-neutral-50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge>{kindLabels[c.kind] ?? "Charge"}</Badge>
+                      <p className="font-medium text-neutral-900">
+                        {formatUsd(c.amount)}
+                      </p>
+                    </div>
+                    <p className="mt-0.5 text-sm text-neutral-500">
+                      Assessed {c.assessedLabel}
+                      {c.description ? ` · ${c.description}` : ""}
+                      {c.paid && c.paidAtLabel
+                        ? ` · paid on ${c.paidAtLabel}`
+                        : ""}
+                    </p>
+                  </div>
+                  <Badge variant={c.paid ? "success" : "warning"}>
+                    {c.paid ? "Paid" : "Due"}
+                  </Badge>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={pendingId === c.id}
+                      onClick={() => togglePaid(c)}
+                    >
+                      {pendingId === c.id
+                        ? "..."
+                        : c.paid
+                          ? "Mark unpaid"
+                          : "Mark paid"}
+                    </Button>
+                    <button
+                      onClick={() => handleDelete(c.id)}
+                      className="text-sm font-medium text-red-600 hover:text-red-700"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {error && !formOpen && (
+          <p className="mt-2 text-sm text-red-600">{error}</p>
         )}
       </div>
     </div>
