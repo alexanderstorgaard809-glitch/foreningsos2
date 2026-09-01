@@ -14,7 +14,7 @@ const iconProps = {
   strokeLinejoin: "round" as const,
 };
 
-const navItems = [
+export const navItems = [
   {
     label: "Overview",
     href: "/dashboard",
