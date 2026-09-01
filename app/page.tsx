@@ -125,6 +125,14 @@ const faqs = [
     q: "What happens to our data?",
     a: "Your data belongs to your association. We never sell it or share it, and you can export or delete everything at any time.",
   },
+  {
+    q: "Why is it free for small boards?",
+    a: "Small boards are where we learn what treasurers actually need — their feedback shapes what gets built. Larger associations pay for the tiers above. That's the whole deal.",
+  },
+  {
+    q: "Do I need accounting knowledge?",
+    a: "No. HOAcove tracks dues, ledgers, charges and budgets the way a treasurer actually thinks — no double-entry, no chart of accounts. Your CPA keeps doing the formal books; you keep knowing exactly who has paid.",
+  },
 ];
 
 const productJsonLd = {
@@ -244,6 +252,7 @@ export default function Home() {
             className="anim-fade-up mt-4 text-sm text-neutral-500"
             style={{ animationDelay: "340ms" }}
           >
+            Free up to 25 homes — no card, no trial, no board vote needed.
             Or email me — I'll set your board up personally:{" "}
             <a
               href="mailto:alexanderstorgaard809@gmail.com"
@@ -430,10 +439,10 @@ export default function Home() {
             <h2 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
               Free up to 25 homes.
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-neutral-600">
-              Every feature is included on every plan. Associations with up
-              to 25 homes pay nothing — pricing only starts when your
-              association grows.
+            <p className="mx-auto mt-3 max-w-xl text-center text-neutral-600">
+              Free up to 25 homes — not a trial. No card, no timer, and no
+              board vote required. Every feature is included; pricing only
+              starts when your association grows.
             </p>
           </Reveal>
           <div className="mt-14">
