@@ -123,7 +123,7 @@ export function MeetingEditor({ meeting }: { meeting: MeetingDetail }) {
 
   async function copyNotice() {
     const lines = [
-      associationName,
+      meeting.associationName,
       "",
       "NOTICE OF MEETING",
       "",
