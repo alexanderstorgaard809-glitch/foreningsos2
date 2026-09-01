@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "@fontsource/cal-sans";
 import "./globals.css";
 
@@ -22,6 +23,7 @@ export default function RootLayout({
         className={`${inter.variable} bg-white text-neutral-900 antialiased`}
       >
         {children}
+        <Analytics />
       </body>
     </html>
   );
