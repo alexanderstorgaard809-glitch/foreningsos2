@@ -7,7 +7,10 @@ const destinations = [
   { label: "Overview", href: "/dashboard" },
   { label: "Members", href: "/dashboard/members" },
   { label: "Dues", href: "/dashboard/dues" },
+  { label: "Budget", href: "/dashboard/budget" },
   { label: "Meetings", href: "/dashboard/meetings" },
+  { label: "Maintenance", href: "/dashboard/maintenance" },
+  { label: "Documents", href: "/dashboard/documents" },
   { label: "Settings", href: "/dashboard/settings" },
   { label: "Back to website", href: "/" },
 ];

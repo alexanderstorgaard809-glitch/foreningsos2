@@ -96,6 +96,9 @@ export default async function Dashboard() {
           <Button href="/dashboard/dues" size="sm" variant="secondary">
             Dues
           </Button>
+          <Button href="/dashboard/budget" size="sm" variant="secondary">
+            Budget
+          </Button>
           <Button href="/dashboard/meetings" size="sm" variant="secondary">
             Meetings
           </Button>

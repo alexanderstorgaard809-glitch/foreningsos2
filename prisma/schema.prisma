@@ -20,6 +20,7 @@ model Association {
   members             Member[]
   duesPayments        DuesPayment[]
   duesYears           DuesYear[]
+  budgetItems         BudgetItem[]
   meetings            Meeting[]
   maintenanceRequests MaintenanceRequest[]
   documents           Document[]
@@ -119,4 +120,19 @@ model Document {
   mimeType      String      @default("application/octet-stream")
   size          Int
   createdAt     DateTime    @default(now())
+}
+
+model BudgetItem {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  year          Int
+  name          String
+  amount        Int
+  pot           String      @default("operating")
+  kind          String      @default("expense")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([associationId, year])
 }

@@ -7,6 +7,7 @@ const crumbs: Record<string, string> = {
   "/dashboard": "Overview",
   "/dashboard/members": "Members",
   "/dashboard/dues": "Dues",
+  "/dashboard/budget": "Budget",
   "/dashboard/settings": "Settings",
   "/dashboard/documents": "Documents",
 };
