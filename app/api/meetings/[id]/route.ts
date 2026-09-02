@@ -29,6 +29,20 @@ export async function PATCH(request: Request, { params }: Params) {
       : "board";
   }
   if (body.location !== undefined) data.location = body.location || null;
+  if (body.quorumRequired !== undefined) {
+    if (body.quorumRequired === null) {
+      data.quorumRequired = null;
+    } else {
+      const quorum = Number(body.quorumRequired);
+      if (!Number.isInteger(quorum) || quorum < 1 || quorum > 10000) {
+        return NextResponse.json(
+          { error: "Quorum must be a whole number between 1 and 10,000" },
+          { status: 400 }
+        );
+      }
+      data.quorumRequired = quorum;
+    }
+  }
   if (body.agenda !== undefined) data.agenda = body.agenda;
   if (body.minutes !== undefined) data.minutes = body.minutes;
   if (body.status !== undefined) {

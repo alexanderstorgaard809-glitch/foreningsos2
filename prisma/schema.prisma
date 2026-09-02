@@ -23,6 +23,7 @@ model Association {
   duesPayments        DuesPayment[]
   duesYears           DuesYear[]
   budgetItems         BudgetItem[]
+  meetingResponses    MeetingResponse[]
   charges             Charge[]
   meetings            Meeting[]
   maintenanceRequests MaintenanceRequest[]
@@ -61,6 +62,7 @@ model Member {
   createdAt     DateTime    @default(now())
   duesPayments  DuesPayment[]
   charges       Charge[]
+  meetingResponses MeetingResponse[]
 }
 
 model DuesPayment {
@@ -97,6 +99,8 @@ model Meeting {
   minutes       String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  quorumRequired Int?
+  responses     MeetingResponse[]
 }
 
 model MaintenanceRequest {
@@ -163,4 +167,22 @@ model Charge {
   updatedAt     DateTime    @updatedAt
 
   @@index([associationId, memberId])
+}
+
+model MeetingResponse {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  meetingId     String
+  meeting       Meeting     @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  memberId      String
+  member        Member      @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  status        String      @default("attending")
+  proxyHolder   String?
+  respondedAt   DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([meetingId, memberId])
+  @@index([associationId, meetingId])
 }
