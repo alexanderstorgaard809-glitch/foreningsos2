@@ -25,6 +25,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (!auth.association.contactEmail) {
+    return NextResponse.json(
+      {
+        error:
+          "Add a contact email in Settings first — members who reply need somewhere for their response to land",
+      },
+      { status: 400 }
+    );
+  }
+
   const body = await request.json();
 
   const subject =
