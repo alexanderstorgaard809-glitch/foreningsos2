@@ -4,6 +4,7 @@ import { getAuthContext } from "@/lib/auth";
 import { toSettings } from "@/lib/settings";
 import { SettingsForm } from "@/components/settings-form";
 import { BoardMembersCard } from "@/components/board-members-card";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -57,20 +58,19 @@ export default async function SettingsPage() {
         invite={invite}
       />
 
-      <div className="mt-4 rounded-lg border border-dashed border-neutral-300 bg-white p-5">
-        <p className="text-sm font-medium text-neutral-900">
+      <div className="mt-4 rounded-lg border border-neutral-200 bg-white p-6">
+        <p className="text-base font-semibold text-neutral-900">
           Treasurer handover
         </p>
         <p className="mt-1 text-sm text-neutral-500">
-          Handing the role to someone else? Generate the handover document,
-          download the members CSV and transfer ownership on one page.
+          Passing the role to someone new? Generate the handover package:
+          records, balances, documents — and transfer ownership.
         </p>
-        <a
-          href="/dashboard/handover"
-          className="mt-3 inline-flex h-9 items-center rounded-md border border-neutral-200 bg-white px-4 text-sm font-medium text-neutral-900 shadow-sm transition-colors hover:bg-neutral-50"
-        >
-          Go to handover
-        </a>
+        <div className="mt-3">
+          <Button href="/dashboard/handover" size="sm" variant="secondary">
+            Open handover package
+          </Button>
+        </div>
       </div>
     </main>
   );

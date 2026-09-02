@@ -12,6 +12,7 @@ const destinations = [
   { label: "Maintenance", href: "/dashboard/maintenance" },
   { label: "Documents", href: "/dashboard/documents" },
   { label: "Settings", href: "/dashboard/settings" },
+  { label: "Treasurer handover", href: "/dashboard/handover" },
   { label: "Back to website", href: "/" },
 ];
 

@@ -10,6 +10,7 @@ const crumbs: Record<string, string> = {
   "/dashboard/budget": "Budget",
   "/dashboard/settings": "Settings",
   "/dashboard/documents": "Documents",
+  "/dashboard/handover": "Handover",
 };
 
 export function Topbar({
