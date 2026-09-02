@@ -46,8 +46,10 @@ export async function sendAnnouncementEmail(
   for (let i = 0; i < recipients.length; i += batchSize) {
     const batch = recipients.slice(i, i + batchSize);
     try {
+      const replyTo = contactEmail.trim();
       const result = await resend.emails.send({
         from: fromEmail,
+        ...(replyTo ? { replyTo } : {}),
         to: batch.map((r) => r.email),
         subject,
         text: `${body}${footer}`,
