@@ -56,6 +56,22 @@ export default async function SettingsPage() {
         isOwner={auth.user.role === "owner"}
         invite={invite}
       />
+
+      <div className="mt-4 rounded-lg border border-dashed border-neutral-300 bg-white p-5">
+        <p className="text-sm font-medium text-neutral-900">
+          Treasurer handover
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Handing the role to someone else? Generate the handover document,
+          download the members CSV and transfer ownership on one page.
+        </p>
+        <a
+          href="/dashboard/handover"
+          className="mt-3 inline-flex h-9 items-center rounded-md border border-neutral-200 bg-white px-4 text-sm font-medium text-neutral-900 shadow-sm transition-colors hover:bg-neutral-50"
+        >
+          Go to handover
+        </a>
+      </div>
     </main>
   );
 }
