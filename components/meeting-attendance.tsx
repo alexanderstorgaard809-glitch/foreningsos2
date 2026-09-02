@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 export type AttendanceMember = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
 };
 
 export type AttendanceResponse = {
@@ -18,28 +18,19 @@ export type AttendanceResponse = {
   respondedLabel: string;
 };
 
-export type MeetingAttendanceProps = {
-  meetingId: string;
-  meetingTitle: string;
-  dateLabel: string;
-  quorumRequired: number | null;
-  members: AttendanceMember[];
-  responses: AttendanceResponse[];
-  associationName: string;
-  contactEmail: string;
-};
-
 const statusLabels: Record<string, string> = {
   attending: "Attending",
   proxy: "Proxy given",
   not_attending: "Not attending",
+  no_response: "No response",
 };
 
-const inputClass =
-  "h-9 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/10";
-
-const selectClass =
-  "h-8 rounded-md border border-neutral-200 bg-white px-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/10";
+const responseOrder: Record<string, number> = {
+  no_response: 0,
+  not_attending: 1,
+  attending: 2,
+  proxy: 3,
+};
 
 export function MeetingAttendance({
   meetingId,
@@ -50,35 +41,48 @@ export function MeetingAttendance({
   responses,
   associationName,
   contactEmail,
-}: MeetingAttendanceProps) {
+}: {
+  meetingId: string;
+  meetingTitle: string;
+  dateLabel: string;
+  quorumRequired: number | null;
+  members: AttendanceMember[];
+  responses: AttendanceResponse[];
+  associationName: string;
+  contactEmail: string;
+}) {
   const router = useRouter();
   const [pendingId, setPendingId] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [quorumDraft, setQuorumDraft] = useState(
     quorumRequired === null ? "" : String(quorumRequired)
   );
   const [savingQuorum, setSavingQuorum] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const responseByMember = useMemo(() => {
-    const map = new Map<string, AttendanceResponse>();
-    for (const r of responses) map.set(r.memberId, r);
-    return map;
-  }, [responses]);
+  const byMember = new Map(responses.map((r) => [r.memberId, r]));
 
   const attendingCount = responses.filter(
-    (r) => r.status === "attending" || r.status === "proxy"
+    (r) => r.status === "attending"
   ).length;
-  const quorumMet = quorumRequired !== null && attendingCount >= quorumRequired;
+  const proxyCount = responses.filter((r) => r.status === "proxy").length;
+  const countTowardQuorum = attendingCount + proxyCount;
+  const quorumMet =
+    quorumRequired !== null && countTowardQuorum >= quorumRequired;
+  const quorumPercent =
+    quorumRequired && quorumRequired > 0
+      ? Math.min(100, Math.round((countTowardQuorum / quorumRequired) * 100))
+      : 0;
 
-  const noResponseMembers = members.filter(
-    (m) => !responseByMember.has(m.id)
-  );
+  const notResponding = members.filter((m) => {
+    const r = byMember.get(m.id);
+    return !r || r.status === "not_attending";
+  });
 
   async function setStatus(
     memberId: string,
     status: string,
-    proxyHolder?: string
+    proxyHolder = ""
   ) {
     setPendingId(memberId);
     setError(null);
@@ -100,16 +104,14 @@ export function MeetingAttendance({
   }
 
   async function saveQuorum() {
-    const value = quorumDraft.trim();
     setSavingQuorum(true);
     setError(null);
     try {
+      const value = quorumDraft.trim() === "" ? null : Number(quorumDraft);
       const res = await fetch(`/api/meetings/${meetingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          quorumRequired: value === "" ? null : Number(value),
-        }),
+        body: JSON.stringify({ quorumRequired: value }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -124,150 +126,185 @@ export function MeetingAttendance({
 
   async function copyReminders() {
     const lines = [
-      associationName,
-      `Reminder — response needed: ${meetingTitle}`,
-      dateLabel,
+      `Still needed for "${meetingTitle}" (${dateLabel}): ${notResponding.length} household${
+        notResponding.length === 1 ? "" : "s"
+      }`,
       "",
-      "We haven't heard from you yet about attendance. Please reply with one of:",
-      "- I will attend",
-      "- I am giving my proxy to (name)",
-      "- I will not attend",
+      ...notResponding.map((m) => {
+        const email =
+          m.email && m.email.trim() ? m.email.trim() : "no email on file";
+        return `- ${m.name} — ${email}`;
+      }),
       "",
-      "Not yet responded:",
-      ...noResponseMembers.map((m) => `- ${m.name}${m.email ? ` (${m.email})` : ""}`),
+      "Reminder text per household:",
+      "",
     ];
-    if (contactEmail.trim()) {
-      lines.push("", `Questions? Contact: ${contactEmail.trim()}`);
+    const sample = notResponding[0];
+    if (sample) {
+      lines.push(
+        `Hi ${sample.name},`,
+        "",
+        `Our ${meetingTitle} is coming up on ${dateLabel}. Please reply to let us know if you'll attend — or if you can't make it, return the proxy form so your vote counts toward quorum.`,
+        "",
+        contactEmail.trim()
+          ? `Questions? Reply here or contact ${contactEmail.trim()}.`
+          : "Questions? Just reply to this message."
+      );
     }
     await navigator.clipboard.writeText(lines.join("\n"));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
+  const sortedMembers = [...members].sort((a, b) => {
+    const aStatus = byMember.get(a.id)?.status ?? "no_response";
+    const bStatus = byMember.get(b.id)?.status ?? "no_response";
+    const aRank = responseOrder[aStatus] ?? 0;
+    const bRank = responseOrder[bStatus] ?? 0;
+    if (aRank !== bRank) return aRank - bRank;
+    return a.name.localeCompare(b.name);
+  });
+
+  const selectClass =
+    "h-8 rounded-md border border-neutral-200 bg-white px-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none";
+
   return (
     <div className="mt-8">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-heading text-lg font-semibold text-neutral-900">
-          Attendance &amp; proxies
-        </h2>
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={copyReminders}
-          disabled={noResponseMembers.length === 0}
-        >
-          {copied ? "Copied!" : `Copy reminder list (${noResponseMembers.length})`}
-        </Button>
-      </div>
-      <p className="mt-1 text-sm text-neutral-500">
-        Track who is coming, who sent a proxy, and who has not responded —
-        before the meeting, not during it.
-      </p>
-
-      <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-neutral-200 bg-white p-4">
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-neutral-500">
-            Quorum required (from your governing docs)
-          </label>
-          <input
-            type="number"
-            min={1}
-            step={1}
-            placeholder="e.g. 6"
-            value={quorumDraft}
-            onChange={(e) => setQuorumDraft(e.target.value)}
-            className={`${inputClass} w-32`}
-          />
-        </div>
-        <Button size="sm" onClick={saveQuorum} disabled={savingQuorum}>
-          {savingQuorum ? "Saving..." : "Save quorum"}
-        </Button>
-        <div className="ml-auto text-right">
-          <p
-            className={`font-heading text-2xl font-semibold ${
-              quorumRequired === null
-                ? "text-neutral-900"
-                : quorumMet
-                  ? "text-emerald-700"
-                  : "text-amber-700"
-            }`}
-          >
-            {attendingCount}
-            {quorumRequired !== null ? ` / ${quorumRequired}` : ""}
+          <p className="text-base font-semibold text-neutral-900">
+            Attendance &amp; proxies
           </p>
-          <p className="text-xs text-neutral-500">
-            {quorumRequired === null
-              ? "attending or proxy — set a quorum to track it"
-              : quorumMet
-                ? "quorum met"
-                : `quorum not yet met (${attendingCount} attending incl. proxies)`}
+          <p className="mt-1 text-sm text-neutral-500">
+            Track who is coming, who gave a proxy, and whether you have quorum
+            — before the meeting, not at the door.
           </p>
         </div>
       </div>
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      <div className="mt-4 rounded-lg border border-neutral-200 bg-white p-5">
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-neutral-900">
+              Quorum required (homes)
+            </label>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              placeholder="e.g. 15"
+              value={quorumDraft}
+              onChange={(e) => setQuorumDraft(e.target.value)}
+              className="h-9 w-36 rounded-md border border-neutral-200 bg-white px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/10"
+            />
+          </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={saveQuorum}
+            disabled={savingQuorum}
+          >
+            {savingQuorum ? "Saving..." : "Save"}
+          </Button>
+          <p className="pb-2 text-xs text-neutral-500">
+            Check your governing docs — often a majority or a set percentage
+            of homes. Leave empty to skip quorum tracking.
+          </p>
+        </div>
+
+        {quorumRequired !== null && (
+          <div className="mt-4 border-t border-neutral-100 pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm text-neutral-600">
+                <span className="font-heading text-xl font-semibold text-neutral-900">
+                  {countTowardQuorum}
+                </span>{" "}
+                of {quorumRequired} toward quorum{" "}
+                <span className="text-neutral-400">
+                  ({attendingCount} attending + {proxyCount} proxies)
+                </span>
+              </p>
+              <Badge variant={quorumMet ? "success" : "warning"}>
+                {quorumMet ? "Quorum met" : "Quorum not yet met"}
+              </Badge>
+            </div>
+            <div className="mt-2 h-1.5 w-full rounded-full bg-neutral-100">
+              <div
+                className={`h-1.5 rounded-full transition-all ${
+                  quorumMet ? "bg-emerald-500" : "bg-amber-500"
+                }`}
+                style={{ width: `${quorumPercent}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {notResponding.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5">
+          <p className="text-sm text-amber-800">
+            {notResponding.length} household
+            {notResponding.length === 1 ? "" : "s"} haven't responded yet
+          </p>
+          <button
+            onClick={copyReminders}
+            className="text-sm font-medium text-amber-800 underline hover:text-amber-900"
+          >
+            {copied ? "Copied!" : "Copy reminder list"}
+          </button>
+        </div>
+      )}
 
       <div className="mt-4 overflow-hidden rounded-lg border border-neutral-200 bg-white">
-        {members.length === 0 ? (
-          <p className="px-4 py-6 text-center text-sm text-neutral-500">
-            No members yet — add members first, then track attendance here.
-          </p>
-        ) : (
-          <ul className="divide-y divide-neutral-100">
-            {members.map((m) => {
-              const r = responseByMember.get(m.id);
-              const status = r?.status ?? "no_response";
-              return (
-                <li
-                  key={m.id}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 hover:bg-neutral-50"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-neutral-900">{m.name}</p>
-                    {status !== "no_response" && r && (
-                      <p className="mt-0.5 text-xs text-neutral-500">
-                        {statusLabels[status]}
-                        {status === "proxy" && r.proxyHolder
-                          ? ` → ${r.proxyHolder}`
-                          : ""}
-                        {" · "}
-                        responded {r.respondedLabel}
-                      </p>
-                    )}
-                    {status === "no_response" && (
-                      <p className="mt-0.5 text-xs text-neutral-500">
-                        No response yet
-                      </p>
-                    )}
-                  </div>
+        <ul className="divide-y divide-neutral-100">
+          {sortedMembers.map((m) => {
+            const r = byMember.get(m.id);
+            const status = r?.status ?? "no_response";
+            return (
+              <li
+                key={m.id}
+                className="flex flex-wrap items-center gap-3 px-4 py-3 hover:bg-neutral-50"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-neutral-900">{m.name}</p>
+                  <p className="text-sm text-neutral-500">
+                    {status === "no_response" && "No response yet"}
+                    {status === "attending" &&
+                      `Attending in person${
+                        r?.respondedLabel ? ` · recorded ${r.respondedLabel}` : ""
+                      }`}
+                    {status === "proxy" &&
+                      `Proxy${
+                        r?.proxyHolder ? ` to ${r.proxyHolder}` : ""
+                      }${r?.respondedLabel ? ` · recorded ${r.respondedLabel}` : ""}`}
+                    {status === "not_attending" &&
+                      "Said they can't attend — proxy still needed"}
+                  </p>
+                </div>
 
+                {status === "proxy" && <Badge variant="success">Proxy</Badge>}
+                {status === "attending" && (
+                  <Badge variant="success">Attending</Badge>
+                )}
+                {status === "not_attending" && (
+                  <Badge variant="warning">No proxy</Badge>
+                )}
+
+                <div className="flex shrink-0 items-center gap-2">
                   {status === "proxy" && (
                     <input
+                      list="member-names-proxy"
                       placeholder="Proxy holder"
                       defaultValue={r?.proxyHolder ?? ""}
                       onBlur={(e) => {
-                        if (e.target.value.trim() !== (r?.proxyHolder ?? "")) {
-                          setStatus(m.id, "proxy", e.target.value);
+                        const value = e.target.value.trim();
+                        if (value !== (r?.proxyHolder ?? "")) {
+                          setStatus(m.id, "proxy", value);
                         }
                       }}
-                      className={`${inputClass} h-8 w-36 text-xs`}
+                      className="h-8 w-36 rounded-md border border-neutral-200 bg-white px-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none"
                     />
                   )}
-
-                  <Badge
-                    variant={
-                      status === "attending" || status === "proxy"
-                        ? "success"
-                        : status === "not_attending"
-                          ? "default"
-                          : "warning"
-                    }
-                  >
-                    {status === "no_response"
-                      ? "No response"
-                      : statusLabels[status]}
-                  </Badge>
-
                   <select
                     value={status}
                     disabled={pendingId === m.id}
@@ -279,12 +316,24 @@ export function MeetingAttendance({
                     <option value="proxy">Proxy given</option>
                     <option value="not_attending">Not attending</option>
                   </select>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                  <datalist id="member-names-proxy">
+                    {members.map((opt) => (
+                      <option key={opt.id} value={opt.name} />
+                    ))}
+                  </datalist>
+                </div>
+              </li>
+            );
+          })}
+          {members.length === 0 && (
+            <li className="px-4 py-6 text-center text-sm text-neutral-500">
+              No members yet — add members first, then track attendance here.
+            </li>
+          )}
+        </ul>
       </div>
+
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>
   );
 }
