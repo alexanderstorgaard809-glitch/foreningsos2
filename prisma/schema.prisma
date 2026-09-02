@@ -24,6 +24,7 @@ model Association {
   duesYears           DuesYear[]
   budgetItems         BudgetItem[]
   meetingResponses    MeetingResponse[]
+  announcements       Announcement[]
   charges             Charge[]
   meetings            Meeting[]
   maintenanceRequests MaintenanceRequest[]
@@ -185,4 +186,18 @@ model MeetingResponse {
 
   @@unique([meetingId, memberId])
   @@index([associationId, meetingId])
+}
+
+model Announcement {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  subject       String
+  body          String
+  audience      String      @default("all")
+  sentAt        DateTime    @default(now())
+  recipientCount Int        @default(0)
+  failedCount   Int         @default(0)
+
+  @@index([associationId, sentAt])
 }

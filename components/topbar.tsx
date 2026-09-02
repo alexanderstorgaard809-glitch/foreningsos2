@@ -11,6 +11,7 @@ const crumbs: Record<string, string> = {
   "/dashboard/settings": "Settings",
   "/dashboard/documents": "Documents",
   "/dashboard/handover": "Handover",
+  "/dashboard/announcements": "Announcements",
 };
 
 export function Topbar({

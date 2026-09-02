@@ -9,6 +9,7 @@ const destinations = [
   { label: "Dues", href: "/dashboard/dues" },
   { label: "Budget", href: "/dashboard/budget" },
   { label: "Meetings", href: "/dashboard/meetings" },
+  { label: "Announcements", href: "/dashboard/announcements" },
   { label: "Maintenance", href: "/dashboard/maintenance" },
   { label: "Documents", href: "/dashboard/documents" },
   { label: "Settings", href: "/dashboard/settings" },

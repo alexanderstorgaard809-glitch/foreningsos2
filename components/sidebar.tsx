@@ -72,6 +72,15 @@ const navItems = [
     ),
   },
   {
+    label: "Announcements",
+    href: "/dashboard/announcements",
+    icon: (
+      <svg {...iconProps}>
+        <path d="M3 11l18-9-9 18-2-7-7-2z" />
+      </svg>
+    ),
+  },
+  {
     label: "Maintenance",
     href: "/dashboard/maintenance",
     icon: (
