@@ -583,8 +583,16 @@ export default function Home() {
               </ul>
             </div>
           </div>
-          <p className="mt-10 border-t border-neutral-100 pt-6 text-sm text-neutral-400">
-            © {year} HOAcove — built in Denmark
+          <p className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-neutral-100 pt-6 text-sm text-neutral-400">
+            <span>© {year} HOAcove — built in Denmark</span>
+            <span aria-hidden="true">·</span>
+            <a href="/about" className="transition-colors hover:text-neutral-900">
+              About
+            </a>
+            <span aria-hidden="true">·</span>
+            <a href="/privacy" className="transition-colors hover:text-neutral-900">
+              Privacy
+            </a>
           </p>
         </div>
       </footer>
