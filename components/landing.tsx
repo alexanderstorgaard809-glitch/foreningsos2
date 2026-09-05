@@ -577,7 +577,7 @@ export default function Landing() {
                     aria-label="Homes paid"
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    aria-valuenow={percentage.toFixed(1)}
+                    aria-valuenow={Number(percentage.toFixed(1))}
                     aria-valuetext={`${paidHomes} of ${DEMO.homes} homes paid; ${formatUsd(collected)} recorded`}
                   >
                     <div
