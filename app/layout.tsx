@@ -9,24 +9,24 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 export const metadata: Metadata = {
   metadataBase: new URL("https://hoacove.com"),
   title: {
-    default: "HOAcove — Simple HOA management for self-managed boards",
+    default: "HOAcove — A better place to run your neighborhood.",
     template: "%s — HOAcove",
   },
   description:
-    "Dues tracking with per-unit ledgers, budget planning, meeting notices and a document archive — built for volunteer-run homeowners associations. Free for small boards.",
+    "One workspace for your self-managed HOA. Organize members, track dues, and keep meetings and documents together. Free for up to 25 homes.",
   openGraph: {
     type: "website",
     url: "https://hoacove.com",
     siteName: "HOAcove",
-    title: "HOAcove — Simple HOA management for self-managed boards",
+    title: "HOAcove — A better place to run your neighborhood.",
     description:
-      "Dues, ledgers, budgets, meetings and documents in one place. Built for self-managed HOAs. Free for small boards.",
+      "One workspace for your self-managed HOA. Organize members, track dues, and keep meetings and documents together. Free for up to 25 homes.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "HOAcove — Simple HOA management for self-managed boards",
+    title: "HOAcove — A better place to run your neighborhood.",
     description:
-      "Dues, ledgers, budgets, meetings and documents in one place. Built for self-managed HOAs. Free for small boards.",
+      "One workspace for your self-managed HOA. Organize members, track dues, and keep meetings and documents together. Free for up to 25 homes.",
   },
   robots: { index: true, follow: true },
   verification: {
